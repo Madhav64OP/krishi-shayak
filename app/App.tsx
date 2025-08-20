@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useProfileStore from './store/profileStore';
@@ -22,7 +23,7 @@ function App(): React.ReactNode {
 function AppContent(): React.ReactNode {
   const { profile, isInitialized } = useProfileStore();
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { t, isTranslationsLoaded } = useTranslation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isInitialized) {
@@ -30,11 +31,10 @@ function AppContent(): React.ReactNode {
     }
   }, [profile, isInitialized]);
 
-  if (!isInitialized || !isTranslationsLoaded) {
+  if (!isInitialized) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
-        {/* Replaced t('loading') with hardcoded text to avoid dependency on unloaded translations */}
-        <div className="text-xl text-text">Loading...</div>
+        <div className="text-xl text-text">{t('loading')}</div>
       </div>
     );
   }
