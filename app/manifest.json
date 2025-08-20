@@ -1,0 +1,21 @@
+
+{
+  "short_name": "Krishi Sahayak",
+  "name": "Krishi Sahayak: Farmer's AI Assistant",
+  "icons": [
+    {
+      "src": "https://picsum.photos/192/192?random=1",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://picsum.photos/512/512?random=2",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0B1C26",
+  "background_color": "#0B1C26"
+}

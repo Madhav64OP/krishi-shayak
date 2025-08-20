@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Copy of Krishi Sahayak f-1",
+  "description": "A modern, progressive web app for farmers, providing weather-based tips, government updates, and an AI assistant.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}

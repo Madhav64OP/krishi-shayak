@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Krishi Sahayak</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0B1C26" />
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS with custom configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+            },
+            colors: {
+              primary: '#2BAF74',
+              'primary-variant': '#1C8C5C',
+              accent: '#FFB020',
+              sky: '#2D6DF6',
+              background: '#0B1C26',
+              surface: '#0F2733',
+              'surface-light': '#1a3a4a',
+              text: '#EAF3F7',
+              'text-secondary': '#a0b8c4',
+              success: '#22C55E',
+              warning: '#F59E0B',
+              error: '#EF4444',
+            },
+            borderRadius: {
+              '2xl': '1rem', // 16px
+              '3xl': '1.25rem', // 20px
+              '4xl': '1.5rem', // 24px
+            }
+          },
+        },
+      }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-background text-text">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
