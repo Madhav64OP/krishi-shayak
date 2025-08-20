@@ -30,7 +30,7 @@ For testing the Main Code
 You Can Test the app code also
 
 
-Make sure 
+Make sure you have node js, python intrepreter in you pc if running locally
 
 ### Step 1
 ```bash
