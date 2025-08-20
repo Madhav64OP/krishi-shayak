@@ -55,8 +55,10 @@ git clone https://github.com/Madhav64OP/krishi-shayak.git
 ### Step 5
 Open the app in your browser on the localhost port shown in the terminal (e.g., http://localhost:3000).
 
+
 ### Step 6 Control Click on it
 
+And then enjoy you app
 ### Now Enjoy Your Demo
 
 ## ✨ Features
