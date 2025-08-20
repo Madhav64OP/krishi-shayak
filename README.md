@@ -17,7 +17,9 @@ The core innovation lies in creating a unified, *agentic platform* that automate
 ## 🌐 Project Links
 You can Access Our app here
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=google-chrome)](https://your-deployed-url.com)
+Click Here
+
+[![https://krishi-shayak.vercel.app/#/welcome](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=google-chrome)](https://your-deployed-url.com)
 
 
 ## 💻 Setup and Installation
