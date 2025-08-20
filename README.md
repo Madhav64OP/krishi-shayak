@@ -22,13 +22,13 @@ Click Here
 [![https://krishi-shayak.vercel.app/#/welcome](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=google-chrome)](https://your-deployed-url.com)
 
 
+
 ## 💻 Setup and Installation
 
 The server for the agentic ai and diseasce classifier is deployed on render, we have deployed it so you dont have to worry about it.
 
 For testing the Main Code
 You Can Test the app code also
-
 
 Make sure you have node js, python intrepreter in you pc if running locally
 
