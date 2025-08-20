@@ -20,7 +20,8 @@ You can Access Our app here
 [![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=google-chrome)](https://your-deployed-url.com)
 
 
-## Testing the App Locally
+## 💻 Setup and Installation
+
 The server for the agentic ai and diseasce classifier is deployed on render, we have deployed it so you dont have to worry about it.
 
 For testing the Main Code
@@ -83,52 +84,9 @@ Our solution is built using a robust and modern stack designed for scalability a
 
 -----
 
-## 💻 Setup and Installation
 
 Follow these steps to set up and run the project locally.
 
-### Prerequisites
-
-  * Python 3.9+
-  * Docker and Docker Compose (recommended for containerized deployment)
-  * A .env file with your API keys (see example.env)
-
-### 1\. Clone the repository
-
-bash
-git clone https://github.com/Ctrl-Shift-B/krishi-sahayak.git
-cd krishi-sahayak
-
-
-### 2\. Set up the environment
-
-Create a .env file in the root directory and add your keys.
-
-bash
-# example.env
-TAVILY_API_KEY="your_tavily_api_key"
-GROQ_API_KEY="your_groq_api_key"
-
-
-### 3\. Install dependencies
-
-It is highly recommended to use a virtual environment.
-
-bash
-pip install -r requirements.txt
-
-
-### 4\. Run the application
-
-You can run the application using Uvicorn.
-
-bash
-uvicorn main:app --reload
-
-
-The application will be running at http://127.0.0.1:8000.
-
------
 
 ## 🚀 Running the Agent
 
