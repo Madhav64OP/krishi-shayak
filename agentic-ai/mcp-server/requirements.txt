@@ -1,0 +1,16 @@
+langgraph
+langchain
+langsmith
+langchain-groq
+langchain-tavily
+python-dotenv
+typing-extensions
+Ipython
+langchain_community
+langchain-mcp-adapters
+fastmcp
+mcp
+duckduckgo-search
+ddgs
+fastapi
+uvicorn
