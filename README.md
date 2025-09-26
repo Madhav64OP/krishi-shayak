@@ -19,7 +19,7 @@ You can Access Our app here
 
 Click Here
 
-[![https://krishi-shayak.vercel.app/#/welcome](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=google-chrome)](https://your-deployed-url.com)
+https://krishi-shayak.vercel.app/#/welcome
 
 
 
