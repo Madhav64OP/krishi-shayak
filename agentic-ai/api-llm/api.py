@@ -16,7 +16,7 @@ import uuid
 load_dotenv()
 
 #---------------llm initialization-----------
-llm=ChatGroq(model="llama3-8b-8192",api_key=os.getenv("GROQ_API_KEY"))
+llm=ChatGroq(model="llama-3.1-8b-instant",api_key=os.getenv("GROQ_API_KEY"))
 
 
 #----------this will store MemorySaver per thread_id------------
