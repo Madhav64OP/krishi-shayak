@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Send, Loader, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-// import { getChatResponseStream } from '../services/geminiService';
+import { getChatResponseStream } from '../services/geminiService';
 import useProfileStore from '../store/profileStore';
 import { useTranslation } from '../hooks/useTranslation';
-import { sendMessageToAgent } from '../services/agentService';
+// import { sendMessageToAgent } from '../services/agentService';
 
 interface Message {
     role: 'user' | 'model';
@@ -19,7 +19,7 @@ const CHARS_PER_TOKEN = 4; // A common approximation
 const CHARACTER_LIMIT = TOKEN_LIMIT * CHARS_PER_TOKEN;
 
 const ChatScreen = (): React.ReactNode => {
-    const [threadId, setThreadId] = useState<string | null>(null);
+    // const [threadId, setThreadId] = useState<string | null>(null);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -99,85 +99,85 @@ const ChatScreen = (): React.ReactNode => {
         }
     };
 
+//     const handleSend = async () => {
+//     if (input.trim() === '' || !profile) return;
+
+//     const newUserMessage: Message = { role: 'user', text: input };
+//     setMessages(prev => [...prev, newUserMessage]);
+//     setInput('');
+//     setIsLoading(true);
+
+//     try {
+//         // Call your Python Backend
+//         const data = await sendMessageToAgent(profile, newUserMessage.text, threadId);
+
+//         // Update thread ID from server for next turn
+//         if (data.thread_id) {
+//             setThreadId(data.thread_id);
+//         }
+
+//         // Add Model Response
+//         const newBotMessage: Message = { role: 'model', text: data.response };
+//         setMessages(prev => [...prev, newBotMessage]);
+
+//     } catch (error) {
+//         console.error("Chat error:", error);
+//         setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
+//     } finally {
+//         setIsLoading(false);
+//     }
+// };
     const handleSend = async () => {
-    if (input.trim() === '' || !profile) return;
+        if (input.trim() === '' || !profile) return;
 
-    const newUserMessage: Message = { role: 'user', text: input };
-    setMessages(prev => [...prev, newUserMessage]);
-    setInput('');
-    setIsLoading(true);
+        const newUserMessage: Message = { role: 'user', text: input };
+        const updatedMessages = [...messages, newUserMessage];
+        setMessages(updatedMessages);
+        setInput('');
+        setIsLoading(true);
 
-    try {
-        // Call your Python Backend
-        const data = await sendMessageToAgent(profile, newUserMessage.text, threadId);
-
-        // Update thread ID from server for next turn
-        if (data.thread_id) {
-            setThreadId(data.thread_id);
+        // Truncate history based on token limit
+        let charCount = 0;
+        const truncatedHistory: Message[] = [];
+        // Iterate backwards from the latest message
+        for (let i = updatedMessages.length - 1; i >= 0; i--) {
+            const message = updatedMessages[i];
+            const messageLength = message.text.length;
+            if (charCount + messageLength <= CHARACTER_LIMIT) {
+                truncatedHistory.unshift(message); // Add to the beginning to maintain order
+                charCount += messageLength;
+            } else {
+                // Stop adding messages once the limit is reached
+                break;
+            }
         }
 
-        // Add Model Response
-        const newBotMessage: Message = { role: 'model', text: data.response };
-        setMessages(prev => [...prev, newBotMessage]);
+        const chatHistory = truncatedHistory.map(msg => ({
+            role: msg.role,
+            parts: [{ text: msg.text }]
+        }));
 
-    } catch (error) {
-        console.error("Chat error:", error);
-        setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
-    } finally {
-        setIsLoading(false);
-    }
-};
-    // const handleSend = async () => {
-    //     if (input.trim() === '' || !profile) return;
-
-    //     const newUserMessage: Message = { role: 'user', text: input };
-    //     const updatedMessages = [...messages, newUserMessage];
-    //     setMessages(updatedMessages);
-    //     setInput('');
-    //     setIsLoading(true);
-
-    //     // Truncate history based on token limit
-    //     let charCount = 0;
-    //     const truncatedHistory: Message[] = [];
-    //     // Iterate backwards from the latest message
-    //     for (let i = updatedMessages.length - 1; i >= 0; i--) {
-    //         const message = updatedMessages[i];
-    //         const messageLength = message.text.length;
-    //         if (charCount + messageLength <= CHARACTER_LIMIT) {
-    //             truncatedHistory.unshift(message); // Add to the beginning to maintain order
-    //             charCount += messageLength;
-    //         } else {
-    //             // Stop adding messages once the limit is reached
-    //             break;
-    //         }
-    //     }
-
-    //     const chatHistory = truncatedHistory.map(msg => ({
-    //         role: msg.role,
-    //         parts: [{ text: msg.text }]
-    //     }));
-
-    //     try {
-    //         const stream = await getChatResponseStream(chatHistory, input, profile);
+        try {
+            const stream = await getChatResponseStream(chatHistory, input, profile);
             
-    //         let modelResponse = '';
-    //         setMessages(prev => [...prev, { role: 'model', text: '...' }]);
+            let modelResponse = '';
+            setMessages(prev => [...prev, { role: 'model', text: '...' }]);
 
-    //         for await (const chunk of stream) {
-    //             modelResponse += chunk.text;
-    //             setMessages(prev => {
-    //                 const newMessages = [...prev];
-    //                 newMessages[newMessages.length - 1].text = modelResponse;
-    //                 return newMessages;
-    //             });
-    //         }
-    //     } catch (error) {
-    //         console.error("Chat error:", error);
-    //         setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
-    //     } finally {
-    //         setIsLoading(false);
-    //     }
-    // };
+            for await (const chunk of stream) {
+                modelResponse += chunk.text;
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].text = modelResponse;
+                    return newMessages;
+                });
+            }
+        } catch (error) {
+            console.error("Chat error:", error);
+            setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="h-screen flex flex-col bg-background">
