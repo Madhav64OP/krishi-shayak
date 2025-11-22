@@ -8,7 +8,7 @@ import type { Profile } from '../../types';
 import { COMMON_CROPS, INDIAN_STATES, LANGUAGES } from '../../constants';
 import { Button, Input, Select } from '../ui';
 import { useTranslation } from '../../hooks/useTranslation';
-import { WEATHER_API_KEY } from '../../config'; // Imported from config
+import { WEATHER_API_KEY } from '../../config';
 
 type OnboardingData = Omit<Profile, 'version' | 'location'> & {
     location: { city: string; lat: number | null; lng: number | null };
@@ -39,15 +39,15 @@ const OnboardingModal = (): React.ReactNode => {
     defaultValues: {
       language: 'en',
       crops: [],
-      state: '', // Ensure state has a default
+      state: '', 
       location: { lat: null, lng: null, city: '' },
     },
   });
 
   const selectedCrops = watch('crops');
-  const selectedState = watch('state'); // Watch state for filtering
+  const selectedState = watch('state'); 
 
-  // --- Click Outside Handler to close suggestions ---
+  // --- Click Outside Handler ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -58,10 +58,10 @@ const OnboardingModal = (): React.ReactNode => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // --- City Fetch Logic ---
+  // --- City Fetch Logic (Corrected) ---
   const handleCitySearch = async (query: string) => {
     setCityQuery(query);
-    setValue('location.city', query); // Update form value as user types
+    setValue('location.city', query); 
 
     if (query.length < 3) {
         setCitySuggestions([]);
@@ -69,11 +69,27 @@ const OnboardingModal = (): React.ReactNode => {
     }
 
     try {
-        // Construct query: "CityName,StateName,IN" to prioritize local results
-        const q = selectedState ? `${query},${selectedState},IN` : `${query},IN`;
-        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${q}&limit=5&appid=${WEATHER_API_KEY}`);
-        const data = await res.json();
-        setCitySuggestions(data);
+        // FIX: Send only "City,IN" to API. Sending "City,State,IN" often fails.
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${query},IN&limit=10&appid=${WEATHER_API_KEY}`);
+        
+        if (!res.ok) throw new Error('Failed to fetch cities');
+        
+        const data: CitySuggestion[] = await res.json();
+        
+        // Client-side Optimization:
+        // If user selected a state in Step 2, move cities from that state to the top of the list.
+        let sortedData = data;
+        if (selectedState) {
+            sortedData = [...data].sort((a, b) => {
+                const aMatch = a.state?.toLowerCase() === selectedState.toLowerCase();
+                const bMatch = b.state?.toLowerCase() === selectedState.toLowerCase();
+                if (aMatch && !bMatch) return -1;
+                if (!aMatch && bMatch) return 1;
+                return 0;
+            });
+        }
+
+        setCitySuggestions(sortedData);
         setShowSuggestions(true);
     } catch (error) {
         console.error("Error fetching cities:", error);
@@ -83,11 +99,10 @@ const OnboardingModal = (): React.ReactNode => {
 
   const selectCity = (city: CitySuggestion) => {
       setValue('location.city', city.name);
-      // Optionally set lat/long from the city selection if auto-detect wasn't used
-      if (!watch('location.lat')) {
-          setValue('location.lat', city.lat);
-          setValue('location.lng', city.lon);
-      }
+      // Automatically set coordinates from the selected city
+      setValue('location.lat', city.lat);
+      setValue('location.lng', city.lon);
+      
       setCityQuery(city.name);
       setCitySuggestions([]);
       setShowSuggestions(false);
@@ -101,7 +116,7 @@ const OnboardingModal = (): React.ReactNode => {
           setValue('location.lat', position.coords.latitude);
           setValue('location.lng', position.coords.longitude);
           setValue('location.city', 'Auto-detected'); 
-          setCityQuery('Auto-detected'); // Update local UI state
+          setCityQuery('Auto-detected'); 
         },
         (error) => {
           setLocationError(t('locationError', { message: error.message }));
@@ -115,14 +130,6 @@ const OnboardingModal = (): React.ReactNode => {
   const onSubmit: SubmitHandler<OnboardingData> = (data) => {
     if (step === 4) {
       if (!data.location.lat || !data.location.lng) {
-          // Fallback: If user typed a city but didn't click "Auto-detect", 
-          // we might need to geocode it (simplified here to require detection or selection)
-          if(data.location.city && data.location.city !== 'Auto-detected') {
-             // In a real app, trigger a background geocode here. 
-             // For now, we accept it if they picked from list (which sets lat/lng) 
-             // or warn them.
-          }
-          
           if(!data.location.lat) {
              setLocationError(t('locationIsRequired'));
              setStep(3);
@@ -135,7 +142,7 @@ const OnboardingModal = (): React.ReactNode => {
         version: 1,
         location: {
             city: data.location.city || 'Unknown',
-            lat: data.location.lat!, // Assert non-null because of check above
+            lat: data.location.lat!,
             lng: data.location.lng!
         }
       };
@@ -251,13 +258,15 @@ const OnboardingModal = (): React.ReactNode => {
                             >
                                 {citySuggestions.map((city, index) => (
                                     <button
-                                        key={`${city.name}-${index}`}
+                                        key={`${city.name}-${city.lat}-${index}`}
                                         type="button"
                                         onClick={() => selectCity(city)}
                                         className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex flex-col border-b border-white/5 last:border-0"
                                     >
                                         <span className="text-sm font-medium text-text">{city.name}</span>
-                                        <span className="text-xs text-text-secondary">{city.state ? `${city.state}, ` : ''}India</span>
+                                        <span className="text-xs text-text-secondary">
+                                            {city.state ? `${city.state}, ` : ''}India
+                                        </span>
                                     </button>
                                 ))}
                             </motion.div>
@@ -277,7 +286,7 @@ const OnboardingModal = (): React.ReactNode => {
                     {COMMON_CROPS.map(crop => (
                         <motion.button
                             key={crop}
-                            type="button" // Prevent form submission
+                            type="button" 
                             onClick={() => handleCropToggle(crop)}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
