@@ -10,7 +10,7 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData>
     return {
       temp: 23,
       condition: 'sunny',
-      icon: React.createElement(Sun, { className: "w-16 h-16 text-accent" }),
+      icon: React.createElement(Sun, { className: "w-12 h-12 text-accent" }),
     };
   }
   
@@ -29,14 +29,14 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData>
     const conditionText = data.current.condition.text.toLowerCase();
     
     let condition: 'sunny' | 'rainy' | 'cloudy' = 'sunny';
-    let iconElement = React.createElement(Sun, { className: "w-16 h-16 text-accent" });
+    let iconElement = React.createElement(Sun, { className: "w-12 h-12 text-accent" });
 
     if (conditionText.includes("cloud") || conditionText.includes("overcast") || conditionText.includes("mist") || conditionText.includes("fog")) {
       condition = 'cloudy';
-      iconElement = React.createElement(Cloud, { className: "w-16 h-16 text-text-secondary" });
+      iconElement = React.createElement(Cloud, { className: "w-12 h-12 text-text-secondary" });
     } else if (conditionText.includes("rain") || conditionText.includes("drizzle") || conditionText.includes("sleet")) {
       condition = 'rainy';
-      iconElement = React.createElement(CloudRain, { className: "w-16 h-16 text-sky" });
+      iconElement = React.createElement(CloudRain, { className: "w-12 h-12 text-sky" });
     }
     
     return {
@@ -51,7 +51,7 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData>
     return {
       temp: 23,
       condition: "sunny",
-      icon: React.createElement(Sun, { className: "w-16 h-16 text-accent" }),
+      icon: React.createElement(Sun, { className: "w-12 h-12 text-accent" }),
     };
   }
 };

@@ -7,8 +7,7 @@
 // ==========================================================================================
 
 // --- Gemini API ---
-// Used for generative AI features like tips, advice, and the chat assistant.
-export const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// This is handled directly in geminiService.ts using import.meta.env.API_KEY as per instructions.
 
 // --- Weather API ---
 // Used to fetch current weather data for the user's location.
@@ -25,3 +24,4 @@ export const AGENTIC_API_ENDPOINT = import.meta.env.VITE_AGENTIC_API_ENDPOINT ||
 // --- Plant Disease API ---
 // The endpoint for the plant disease detection model.
 export const DISEASE_API_ENDPOINT = import.meta.env.VITE_DISEASE_API_ENDPOINT || 'https://fastapi-disease.onrender.com/predict';
+

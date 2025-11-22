@@ -1,14 +1,16 @@
 import React, { forwardRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type MotionProps } from 'framer-motion';
 
 // --- Button ---
-type ButtonProps = React.ComponentProps<typeof motion.button>;
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & MotionProps;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ className, children, ...props }, ref) => {
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
-      className={`px-4 py-2 rounded-2xl font-semibold text-white bg-gradient-to-r from-primary to-primary-variant transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      whileHover={{ y: -2, boxShadow: "0 10px 20px rgba(0, 0, 0, 0.2)" }}
+      whileTap={{ scale: 0.95, y: 0, boxShadow: "0 5px 10px rgba(0, 0, 0, 0.15)" }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      className={`px-4 py-2 rounded-2xl font-semibold text-white bg-gradient-to-r from-primary to-primary-variant focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
       ref={ref}
       {...props}
     >
@@ -22,7 +24,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, ...props }, ref) => {
   return (
     <input
-      className={`w-full px-4 py-3 bg-surface-light text-text rounded-2xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-text-secondary ${className}`}
+      className={`w-full px-4 py-3 bg-surface-light text-text rounded-2xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-text-secondary transition-shadow duration-300 ${className}`}
       ref={ref}
       {...props}
     />
@@ -36,7 +38,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(({ className, children, ...props }, ref) => {
     return (
         <select
-            className={`w-full px-4 py-3 bg-surface-light text-text rounded-2xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary appearance-none ${className}`}
+            className={`w-full px-4 py-3 bg-surface-light text-text rounded-2xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary appearance-none transition-shadow duration-300 ${className}`}
             ref={ref}
             {...props}
         >
@@ -49,16 +51,27 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({ className, c
 // --- Card ---
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  isPressable?: boolean;
 }
-export const Card = forwardRef<HTMLDivElement, CardProps>(({ className, children, ...props }, ref) => {
+export const Card = forwardRef<HTMLDivElement, CardProps>(({ className, children, isPressable, ...props }, ref) => {
+  const hoverEffect = isPressable ? {
+    y: -5,
+    boxShadow: "0 15px 30px rgba(0, 0, 0, 0.25)",
+  } : {};
+  
+  const tapEffect = isPressable ? { scale: 0.97 } : {};
+
   return (
-    <div
-      className={`bg-surface p-6 rounded-4xl shadow-lg ${className}`}
+    <motion.div
+      whileHover={hoverEffect}
+      whileTap={tapEffect}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`bg-surface p-6 rounded-3xl shadow-lg border border-white/5 ${className}`}
       ref={ref}
       {...props}
     >
       {children}
-    </div>
+    </motion.div>
   );
 });
 

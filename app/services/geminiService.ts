@@ -2,13 +2,14 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import type { Profile, WeatherData } from '../types';
 import { LANGUAGES } from '../constants';
-import { GEMINI_API_KEY } from '../config';
 
-if (!GEMINI_API_KEY) {
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!apiKey) {
     console.error("Gemini API Key is not configured in environment variables.");
 }
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: apiKey! });
 
 /**
  * Safely parses a JSON string, attempting to clean it if it's wrapped in markdown code fences.
@@ -43,7 +44,7 @@ const safeJsonParse = (jsonString: string) => {
 
 
 export const getTipsFromGemini = async (profile: Profile, weather: WeatherData): Promise<string[]> => {
-  if (!GEMINI_API_KEY) return ["Error: API Key is not configured.", "Please contact support.", ""];
+  if (!apiKey) return ["Error: API Key is not configured.", "Please contact support.", ""];
   try {
     const languageName = LANGUAGES.find(lang => lang.code === profile.language)?.name || 'English';
     const prompt = `I am a farmer in ${profile.location.city}, ${profile.state}, India. I grow ${profile.crops.join(', ')}. The current weather is ${weather.condition} with a temperature of ${weather.temp}°C. Give me exactly 3 short, actionable, and distinct farming tips based on this information. Each tip should be a single sentence. The tips must be in the ${languageName} language.`;
@@ -84,7 +85,7 @@ export const getTipsFromGemini = async (profile: Profile, weather: WeatherData):
 };
 
 export const getDiseaseAdviceFromGemini = async (profile: Profile, diseasePrediction: string): Promise<string> => {
-  if (!GEMINI_API_KEY) throw new Error("API Key is not configured.");
+  if (!apiKey) throw new Error("API Key is not configured.");
   try {
     const languageName = LANGUAGES.find(lang => lang.code === profile.language)?.name || 'English';
     const prompt = `I am a farmer in ${profile.state}, India, and I grow ${profile.crops.join(', ')}. A plant has been diagnosed with "${diseasePrediction}". 
@@ -113,7 +114,7 @@ export const getDiseaseAdviceFromGemini = async (profile: Profile, diseasePredic
 
 
 export const getChatResponseStream = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string, profile: Profile) => {
-    if (!GEMINI_API_KEY) throw new Error("API Key is not configured.");
+    if (!apiKey) throw new Error("API Key is not configured.");
     const chat = ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {

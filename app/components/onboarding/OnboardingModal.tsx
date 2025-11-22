@@ -95,16 +95,18 @@ const OnboardingModal = (): React.ReactNode => {
                                 name="language"
                                 control={control}
                                 render={({ field }) => (
-                                     <button 
+                                     <motion.button 
                                         onClick={() => {
                                             field.onChange(lang.code)
                                             // Immediately go to next step after language selection
                                             setTimeout(() => nextStep(), 100);
                                         }}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         className={`w-full p-3 rounded-2xl text-left transition-colors duration-200 ${field.value === lang.code ? 'bg-primary text-white' : 'bg-surface-light hover:bg-surface'}`}
                                     >
                                         {lang.name}
-                                    </button>
+                                    </motion.button>
                                 )}
                             />
                         </div>
@@ -156,13 +158,21 @@ const OnboardingModal = (): React.ReactNode => {
                 <p className="text-center text-text-secondary mb-4">{t('cropsPrompt')}</p>
                 <div className="flex flex-wrap gap-3 justify-center">
                     {COMMON_CROPS.map(crop => (
-                        <button
+                        <motion.button
                             key={crop}
                             onClick={() => handleCropToggle(crop)}
-                            className={`px-4 py-2 rounded-xl text-sm transition-all duration-200 shadow-md ${selectedCrops.includes(crop) ? 'bg-primary text-white scale-105' : 'bg-surface-light hover:bg-surface'}`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            animate={{ 
+                                scale: selectedCrops.includes(crop) ? 1.05 : 1,
+                                backgroundColor: selectedCrops.includes(crop) ? '#34D399' : '#1A3029',
+                                color: selectedCrops.includes(crop) ? '#FFFFFF' : '#E5E7EB'
+                            }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            className={`px-4 py-2 rounded-xl text-sm shadow-md`}
                         >
                             {crop}
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
                  <Controller name="crops" control={control} rules={{ required: t('cropRequired') }} render={() => <></>} />

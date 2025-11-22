@@ -1,17 +1,30 @@
-
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import useProfileStore from '../store/profileStore';
 
 interface TranslationContextType {
     t: (key: string, replacements?: { [key: string]: string | number }) => string;
     language: string;
+    isTranslationsLoaded: boolean;
 }
 
 // Providing a default context
 export const TranslationContext = createContext<TranslationContextType>({
     t: (key) => key,
     language: 'en',
+    isTranslationsLoaded: false,
 });
+
+// Explicitly map language codes to their dynamic import functions.
+// This helps bundlers like Vite correctly identify and package the locale files for production.
+const localeModules: Record<string, () => Promise<any>> = {
+  en: () => import('../locales/en.json'),
+  hi: () => import('../locales/hi.json'),
+  mr: () => import('../locales/mr.json'),
+  bn: () => import('../locales/bn.json'),
+  te: () => import('../locales/te.json'),
+  ta: () => import('../locales/ta.json'),
+};
+
 
 interface TranslationProviderProps {
     children: ReactNode;
@@ -20,38 +33,35 @@ interface TranslationProviderProps {
 export const TranslationProvider: React.FC<TranslationProviderProps> = ({ children }) => {
     const { profile } = useProfileStore();
     const [translations, setTranslations] = useState<{ [key: string]: string }>({});
+    const [isTranslationsLoaded, setIsTranslationsLoaded] = useState(false);
     
     // Determine language from profile or default to 'en'.
-    // If onboarding, profile is null, so it correctly defaults to English until a language is chosen.
     const language = profile?.language || 'en';
 
     useEffect(() => {
-        const fetchTranslations = async () => {
-            const loadLangFile = async (langCode: string) => {
-                const response = await fetch(`/locales/${langCode}.json`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch translation file: ${langCode}.json`);
-                }
-                return response.json();
-            };
+        const loadTranslations = async () => {
+            setIsTranslationsLoaded(false);
+            const loadModule = localeModules[language] || localeModules.en; // Fallback to English loader
 
             try {
-                const data = await loadLangFile(language);
-                setTranslations(data);
+                const module = await loadModule();
+                setTranslations(module.default);
             } catch (error) {
                 console.error(`Could not load translation file for language: ${language}`, error);
-                // Fallback to English if the selected language file is not found
+                // Attempt to load English as a last resort if the primary fails
                 try {
-                    const fallbackData = await loadLangFile('en');
-                    setTranslations(fallbackData);
+                    const fallbackModule = await localeModules.en();
+                    setTranslations(fallbackModule.default);
                 } catch (fallbackError) {
                     console.error('Could not load fallback English translation file.', fallbackError);
                     setTranslations({}); // Prevent app crash
                 }
+            } finally {
+                setIsTranslationsLoaded(true);
             }
         };
 
-        fetchTranslations();
+        loadTranslations();
     }, [language]);
 
     const t = useCallback((key: string, replacements?: { [key: string]: string | number }) => {
@@ -65,7 +75,7 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
     }, [translations]);
 
     return (
-        <TranslationContext.Provider value={{ t, language }}>
+        <TranslationContext.Provider value={{ t, language, isTranslationsLoaded }}>
             {children}
         </TranslationContext.Provider>
     );

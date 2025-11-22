@@ -4,21 +4,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Send, Loader, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getChatResponseStream } from '../services/geminiService';
+// import { getChatResponseStream } from '../services/geminiService';
 import useProfileStore from '../store/profileStore';
 import { useTranslation } from '../hooks/useTranslation';
+import { sendMessageToAgent } from '../services/agentService';
 
 interface Message {
     role: 'user' | 'model';
     text: string;
 }
-
 // Configuration for token limit
 const TOKEN_LIMIT = 5500;
 const CHARS_PER_TOKEN = 4; // A common approximation
 const CHARACTER_LIMIT = TOKEN_LIMIT * CHARS_PER_TOKEN;
 
 const ChatScreen = (): React.ReactNode => {
+    const [threadId, setThreadId] = useState<string | null>(null);
+
     const navigate = useNavigate();
     const location = useLocation();
     const profile = useProfileStore((state) => state.profile);
@@ -97,58 +99,85 @@ const ChatScreen = (): React.ReactNode => {
         }
     };
 
-
     const handleSend = async () => {
-        if (input.trim() === '' || !profile) return;
+    if (input.trim() === '' || !profile) return;
 
-        const newUserMessage: Message = { role: 'user', text: input };
-        const updatedMessages = [...messages, newUserMessage];
-        setMessages(updatedMessages);
-        setInput('');
-        setIsLoading(true);
+    const newUserMessage: Message = { role: 'user', text: input };
+    setMessages(prev => [...prev, newUserMessage]);
+    setInput('');
+    setIsLoading(true);
 
-        // Truncate history based on token limit
-        let charCount = 0;
-        const truncatedHistory: Message[] = [];
-        // Iterate backwards from the latest message
-        for (let i = updatedMessages.length - 1; i >= 0; i--) {
-            const message = updatedMessages[i];
-            const messageLength = message.text.length;
-            if (charCount + messageLength <= CHARACTER_LIMIT) {
-                truncatedHistory.unshift(message); // Add to the beginning to maintain order
-                charCount += messageLength;
-            } else {
-                // Stop adding messages once the limit is reached
-                break;
-            }
+    try {
+        // Call your Python Backend
+        const data = await sendMessageToAgent(profile, newUserMessage.text, threadId);
+
+        // Update thread ID from server for next turn
+        if (data.thread_id) {
+            setThreadId(data.thread_id);
         }
 
-        const chatHistory = truncatedHistory.map(msg => ({
-            role: msg.role,
-            parts: [{ text: msg.text }]
-        }));
+        // Add Model Response
+        const newBotMessage: Message = { role: 'model', text: data.response };
+        setMessages(prev => [...prev, newBotMessage]);
 
-        try {
-            const stream = await getChatResponseStream(chatHistory, input, profile);
+    } catch (error) {
+        console.error("Chat error:", error);
+        setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
+    } finally {
+        setIsLoading(false);
+    }
+};
+    // const handleSend = async () => {
+    //     if (input.trim() === '' || !profile) return;
+
+    //     const newUserMessage: Message = { role: 'user', text: input };
+    //     const updatedMessages = [...messages, newUserMessage];
+    //     setMessages(updatedMessages);
+    //     setInput('');
+    //     setIsLoading(true);
+
+    //     // Truncate history based on token limit
+    //     let charCount = 0;
+    //     const truncatedHistory: Message[] = [];
+    //     // Iterate backwards from the latest message
+    //     for (let i = updatedMessages.length - 1; i >= 0; i--) {
+    //         const message = updatedMessages[i];
+    //         const messageLength = message.text.length;
+    //         if (charCount + messageLength <= CHARACTER_LIMIT) {
+    //             truncatedHistory.unshift(message); // Add to the beginning to maintain order
+    //             charCount += messageLength;
+    //         } else {
+    //             // Stop adding messages once the limit is reached
+    //             break;
+    //         }
+    //     }
+
+    //     const chatHistory = truncatedHistory.map(msg => ({
+    //         role: msg.role,
+    //         parts: [{ text: msg.text }]
+    //     }));
+
+    //     try {
+    //         const stream = await getChatResponseStream(chatHistory, input, profile);
             
-            let modelResponse = '';
-            setMessages(prev => [...prev, { role: 'model', text: '...' }]);
+    //         let modelResponse = '';
+    //         setMessages(prev => [...prev, { role: 'model', text: '...' }]);
 
-            for await (const chunk of stream) {
-                modelResponse += chunk.text;
-                setMessages(prev => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1].text = modelResponse;
-                    return newMessages;
-                });
-            }
-        } catch (error) {
-            console.error("Chat error:", error);
-            setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    //         for await (const chunk of stream) {
+    //             modelResponse += chunk.text;
+    //             setMessages(prev => {
+    //                 const newMessages = [...prev];
+    //                 newMessages[newMessages.length - 1].text = modelResponse;
+    //                 return newMessages;
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error("Chat error:", error);
+    //         setMessages(prev => [...prev, { role: 'model', text: t('chatError') }]);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
 
     return (
         <div className="h-screen flex flex-col bg-background">
@@ -196,15 +225,35 @@ const ChatScreen = (): React.ReactNode => {
                         className="flex-1 w-full pl-6 pr-6 py-3 text-lg bg-surface rounded-full focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-text-secondary"
                         disabled={isLoading || isListening}
                     />
-                    {input.trim() === '' && !isListening ? (
-                         <button onClick={handleMicClick} disabled={isLoading} className="bg-primary p-3 rounded-full text-white">
-                             <Mic className="w-6 h-6" />
-                         </button>
-                    ) : (
-                         <button onClick={handleSend} disabled={isLoading || isListening || input.trim() === ''} className={`p-3 rounded-full text-white ${isListening ? 'bg-error animate-pulse' : 'bg-primary'} disabled:opacity-50`}>
-                             {isListening ? <Mic className="w-6 h-6" /> : (isLoading ? <Loader className="animate-spin w-6 h-6"/> : <Send className="w-6 h-6" />)}
-                         </button>
-                    )}
+                    <AnimatePresence mode="popLayout" initial={false}>
+                        {input.trim() === '' && !isListening ? (
+                            <motion.button 
+                                key="mic"
+                                initial={{ scale: 0, opacity: 0, rotate: -90 }}
+                                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                exit={{ scale: 0, opacity: 0, rotate: 90 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={handleMicClick} disabled={isLoading} className="bg-primary p-3 rounded-full text-white"
+                            >
+                                <Mic className="w-6 h-6" />
+                            </motion.button>
+                        ) : (
+                            <motion.button 
+                                key="send"
+                                initial={{ scale: 0, opacity: 0, rotate: 90 }}
+                                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                exit={{ scale: 0, opacity: 0, rotate: -90 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={isListening ? handleMicClick : handleSend} 
+                                disabled={isLoading || (!isListening && input.trim() === '')} 
+                                className={`p-3 rounded-full text-white ${isListening ? 'bg-error animate-pulse-red' : 'bg-primary'} disabled:opacity-50`}
+                            >
+                                {isListening ? <Mic className="w-6 h-6" /> : (isLoading ? <Loader className="animate-spin w-6 h-6"/> : <Send className="w-6 h-6" />)}
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </div>
             </footer>
         </div>
