@@ -13,6 +13,9 @@
 // Used to fetch current weather data for the user's location.
 export const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API;
 
+export const OPENWEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+
+
 // --- Tavily API ---
 // Used for web searches.
 export const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY;

@@ -8,7 +8,7 @@ import type { Profile } from '../../types';
 import { COMMON_CROPS, INDIAN_STATES, LANGUAGES } from '../../constants';
 import { Button, Input, Select } from '../ui';
 import { useTranslation } from '../../hooks/useTranslation';
-import { VITE_WEATHER_API_KEY } from '../../config';
+import { OPENWEATHER_API_KEY } from '../../config';
 
 type OnboardingData = Omit<Profile, 'version' | 'location'> & {
     location: { city: string; lat: number | null; lng: number | null };
@@ -70,7 +70,7 @@ const OnboardingModal = (): React.ReactNode => {
 
     try {
         // FIX: Send only "City,IN" to API. Sending "City,State,IN" often fails.
-        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${query},IN&limit=10&appid=${VITE_WEATHER_API_KEY}`);
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${query},IN&limit=10&appid=${OPENWEATHER_API_KEY}`);
         
         if (!res.ok) throw new Error('Failed to fetch cities');
         
