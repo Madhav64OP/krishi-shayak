@@ -1,34 +1,97 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Phone, MapPin, Leaf, Check, Languages, ChevronLeft } from 'lucide-react';
+import { User, Phone, MapPin, ChevronLeft } from 'lucide-react';
 
 import useProfileStore from '../../store/profileStore';
 import type { Profile } from '../../types';
 import { COMMON_CROPS, INDIAN_STATES, LANGUAGES } from '../../constants';
 import { Button, Input, Select } from '../ui';
 import { useTranslation } from '../../hooks/useTranslation';
+import { WEATHER_API_KEY } from '../../config'; // Imported from config
 
 type OnboardingData = Omit<Profile, 'version' | 'location'> & {
     location: { city: string; lat: number | null; lng: number | null };
 };
 
+interface CitySuggestion {
+    name: string;
+    state?: string;
+    country?: string;
+    lat: number;
+    lon: number;
+}
+
 const OnboardingModal = (): React.ReactNode => {
   const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [locationError, setLocationError] = useState('');
+  
+  // --- New States for City Autocomplete ---
+  const [cityQuery, setCityQuery] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   const setProfile = useProfileStore((state) => state.setProfile);
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<OnboardingData>({
     defaultValues: {
       language: 'en',
       crops: [],
+      state: '', // Ensure state has a default
       location: { lat: null, lng: null, city: '' },
     },
   });
 
   const selectedCrops = watch('crops');
+  const selectedState = watch('state'); // Watch state for filtering
+
+  // --- Click Outside Handler to close suggestions ---
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // --- City Fetch Logic ---
+  const handleCitySearch = async (query: string) => {
+    setCityQuery(query);
+    setValue('location.city', query); // Update form value as user types
+
+    if (query.length < 3) {
+        setCitySuggestions([]);
+        return;
+    }
+
+    try {
+        // Construct query: "CityName,StateName,IN" to prioritize local results
+        const q = selectedState ? `${query},${selectedState},IN` : `${query},IN`;
+        const res = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${q}&limit=5&appid=${WEATHER_API_KEY}`);
+        const data = await res.json();
+        setCitySuggestions(data);
+        setShowSuggestions(true);
+    } catch (error) {
+        console.error("Error fetching cities:", error);
+        setCitySuggestions([]);
+    }
+  };
+
+  const selectCity = (city: CitySuggestion) => {
+      setValue('location.city', city.name);
+      // Optionally set lat/long from the city selection if auto-detect wasn't used
+      if (!watch('location.lat')) {
+          setValue('location.lat', city.lat);
+          setValue('location.lng', city.lon);
+      }
+      setCityQuery(city.name);
+      setCitySuggestions([]);
+      setShowSuggestions(false);
+  };
 
   const handleGetLocation = () => {
     setLocationError('');
@@ -37,8 +100,8 @@ const OnboardingModal = (): React.ReactNode => {
         (position) => {
           setValue('location.lat', position.coords.latitude);
           setValue('location.lng', position.coords.longitude);
-          // In a real app, you would use a reverse geocoding API here.
           setValue('location.city', 'Auto-detected'); 
+          setCityQuery('Auto-detected'); // Update local UI state
         },
         (error) => {
           setLocationError(t('locationError', { message: error.message }));
@@ -52,17 +115,28 @@ const OnboardingModal = (): React.ReactNode => {
   const onSubmit: SubmitHandler<OnboardingData> = (data) => {
     if (step === 4) {
       if (!data.location.lat || !data.location.lng) {
-          setLocationError(t('locationIsRequired'));
-          setStep(3);
-          return;
+          // Fallback: If user typed a city but didn't click "Auto-detect", 
+          // we might need to geocode it (simplified here to require detection or selection)
+          if(data.location.city && data.location.city !== 'Auto-detected') {
+             // In a real app, trigger a background geocode here. 
+             // For now, we accept it if they picked from list (which sets lat/lng) 
+             // or warn them.
+          }
+          
+          if(!data.location.lat) {
+             setLocationError(t('locationIsRequired'));
+             setStep(3);
+             return;
+          }
       }
+      
       const finalProfile: Profile = {
         ...data,
         version: 1,
         location: {
             city: data.location.city || 'Unknown',
-            lat: data.location.lat,
-            lng: data.location.lng
+            lat: data.location.lat!, // Assert non-null because of check above
+            lng: data.location.lng!
         }
       };
       setProfile(finalProfile);
@@ -98,7 +172,6 @@ const OnboardingModal = (): React.ReactNode => {
                                      <motion.button 
                                         onClick={() => {
                                             field.onChange(lang.code)
-                                            // Immediately go to next step after language selection
                                             setTimeout(() => nextStep(), 100);
                                         }}
                                         whileHover={{ scale: 1.02 }}
@@ -143,11 +216,55 @@ const OnboardingModal = (): React.ReactNode => {
         return (
             <StepWrapper title={t('stepLocationTitle')} onBack={prevStep} onNext={handleSubmit(() => nextStep())}>
                 <p className="text-center text-text-secondary mb-4">{t('locationPrompt')}</p>
-                <Button onClick={handleGetLocation} className="w-full mb-4">{t('autoDetectLocationButton')}</Button>
-                <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" />
-                    <Input placeholder={t('cityPlaceholder')} {...register('location.city')} className="pl-12" />
+                
+                <Button onClick={handleGetLocation} type="button" className="w-full mb-6 bg-sky/80 hover:bg-sky">
+                    {t('autoDetectLocationButton')}
+                </Button>
+                
+                <div className="relative mb-2">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-surface-light" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-text-secondary">Or enter manually</span>
+                    </div>
                 </div>
+
+                <div className="relative" ref={suggestionsRef}>
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary z-10" />
+                    <Input 
+                        placeholder={t('cityPlaceholder')} 
+                        value={cityQuery}
+                        onChange={(e) => handleCitySearch(e.target.value)}
+                        className="pl-12"
+                        autoComplete="off"
+                    />
+                    
+                    {/* Suggestions Dropdown */}
+                    <AnimatePresence>
+                        {showSuggestions && citySuggestions.length > 0 && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute w-full mt-1 bg-surface-light border border-white/10 rounded-2xl overflow-hidden shadow-xl z-50 max-h-48 overflow-y-auto"
+                            >
+                                {citySuggestions.map((city, index) => (
+                                    <button
+                                        key={`${city.name}-${index}`}
+                                        type="button"
+                                        onClick={() => selectCity(city)}
+                                        className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex flex-col border-b border-white/5 last:border-0"
+                                    >
+                                        <span className="text-sm font-medium text-text">{city.name}</span>
+                                        <span className="text-xs text-text-secondary">{city.state ? `${city.state}, ` : ''}India</span>
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
                 {locationError && <p className="text-error text-sm mt-2 text-center">{locationError}</p>}
                 {watch('location.lat') && <p className="text-success text-sm mt-2 text-center">{t('locationCaptured')}</p>}
             </StepWrapper>
@@ -160,6 +277,7 @@ const OnboardingModal = (): React.ReactNode => {
                     {COMMON_CROPS.map(crop => (
                         <motion.button
                             key={crop}
+                            type="button" // Prevent form submission
                             onClick={() => handleCropToggle(crop)}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
